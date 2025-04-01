@@ -1,0 +1,28 @@
+bootstrap.memory_lock: true
+cluster.name: graylog
+discovery.zen.ping.unicast.hosts:
+  - el01
+#  - t-log-001.test.local
+#  - t-log-002.test.local
+#  - t-log-003.test.local
+#  - t-log-004.test.local
+network.host: 0.0.0.0
+node.data: true
+node.ingest: true
+node.master: true
+node.name: el01
+
+
+
+
+#################################### Paths ####################################
+
+# Path to directory containing configuration (this file and logging.yml):
+
+path.data: /graylog/elasticsearch
+
+path.logs: /var/log/elasticsearch
+
+path.repo: /graylog/nfs-elk/snapshots/
+
+action.auto_create_index: true

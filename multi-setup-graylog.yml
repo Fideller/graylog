@@ -1,0 +1,98 @@
+#version: '3.7'
+
+services:
+  elasticsearch:
+    image: elasticsearch:6.8.19
+    container_name: graylog_elasticsearch_1
+    environment:
+      - cluster.name=graylog
+      - node.name=el01
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      #- discovery.zen.ping.unicast.hosts=el01,el02
+      - action.auto_create_index=true
+      #- cluster.initial_master_nodes=el01,el02
+      #- HOST_IP=${HOST_IP}
+      
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /root/elastic:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    network_mode: host
+   # networks:
+   #   - graylog-net
+   #   - macvlan_network
+   # command: ["-E", "network.host=0.0.0.0"]
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:4.4
+    container_name: graylog_mongo
+    volumes:
+      - /root/mongo:/data/db
+    command: ["mongod", "--replSet", "myReplSet", "--bind_ip_all"]
+    network_mode: host
+    ports:
+      - "27017:27017"
+    #networks:
+    #  - graylog-net
+    #  - macvlan_network
+    restart: unless-stopped
+  # Подключение к БД в контейнере mongo --host localhost --port 27017
+  #Инициализация кластера монго, без него в сетапе репликасет база не стартанет вообще
+  #rs.initiate({
+  #  _id: "myReplSet",
+  #  members: [
+  #    { _id: 0, host: "el01:27017" },
+  #    { _id: 1, host: "el02:27017" },
+  #    { _id: 2, host: "el03:27017" }
+  #  ]
+  #})
+  #rs.status() Проверка статуса 
+  #rs.add("el03:27017"): Добавить хост, если ранее база была инициализирована с другим количеством хостов
+  #
+
+  graylog:
+    image: graylog/graylog:3.3.13
+    container_name: graylog_server_1
+    environment:
+      GRAYLOG_CONTENT_PACKS_ENABLED: "true"
+      GRAYLOG_CONTENT_PACKS_GROK_DISABLE: "false"
+      GRAYLOG_ROOT_PASSWORD_SHA2: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+      GRAYLOG_WEB_ENDPOINT_URI: "http://10.10.10.71:9000/api"
+      GRAYLOG_HTTP_EXTERNAL_URI: "http://10.10.10.71:9000/"
+      GRAYLOG_ROOT_TIMEZONE: "UTC"
+      GRAYLOG_ENABLE_SSL: "false"
+      GRAYLOG_ELASTICSEARCH_HOSTS: "http://elasticsearch:9200" #,http://el02:9300"
+      GRAYLOG_MONGODB_URI: "mongodb://el01:27017,el02:27017,el03:27017/graylog?replicaSet=myReplSet"
+      #GRAYLOG_MONGO_URI: "mongodb://el01:27017/graylog,el02:27017/graylog,el03:27017/graylog"
+    volumes:
+      - /root/graylog:/usr/share/graylog/data/data
+    ports:
+      - "9000:9000"
+      - "12201:12201"
+      - "514:514"
+      - "514:514/udp"
+      - "6000:6000"
+      - "6000:6000/udp"
+    network_mode: host
+    #networks:
+    #  - graylog-net
+    #  - macvlan_network
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+#volumes:
+#  esdata1:
+#  mongodata:
+#  graylogdata:
+
+#networks:
+#  graylog-net:
+#    driver: host 
