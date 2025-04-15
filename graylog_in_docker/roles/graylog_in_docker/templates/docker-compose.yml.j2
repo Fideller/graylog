@@ -30,20 +30,7 @@ services:
     ports:
       - "27017:27017"
     restart: unless-stopped
-  # Подключение к БД в контейнере mongo --host localhost --port 27017
-  #Инициализация кластера монго, без него в сетапе репликасет база не стартанет вообще
-  #rs.initiate({
-  #  _id: "graylog",
-  #  members: [
-  #    { _id: 0, host: "el01:27017" },
-  #    { _id: 1, host: "el02:27017" },
-  #    { _id: 2, host: "el03:27017" }
-  #  ]
-  #})
-  #rs.status() Проверка статуса 
-  #rs.add("el03:27017"): Добавить хост, если ранее база была инициализирована с другим количеством хостов
-  #
-
+  
   graylog:
     image: graylog/graylog:3.3.13
     container_name: graylog_server_1
