@@ -1,0 +1,66 @@
+services:
+  elasticsearch:
+    image: elasticsearch:6.8.19
+    container_name: graylog_elasticsearch_1  
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /app/elastic:/graylog/elasticsearch
+      - /app/elastic/log:/var/log/elasticsearch
+      - /app/elastic/nfs-elk:/graylog/nfs-elk/snapshots/
+      - /app/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /app/config/jvm.options:/usr/share/elasticsearch/config/jvm.options
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    network_mode: host
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:4.4
+    container_name: graylog_mongo
+    command: ["mongod", "--bind_ip_all", "--config", "/etc/mongod.conf"]
+    volumes:
+      - /app/mongo:/graylog/mongodb
+      - /app/config/mongod.conf:/etc/mongod.conf
+      - /app/mongo/log:/var/log/mongodb/
+    network_mode: host
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+  # Подключение к БД в контейнере mongo --host localhost --port 27017
+  #Инициализация кластера монго, без него в сетапе репликасет база не стартанет вообще
+  #rs.initiate({
+  #  _id: "graylog",
+  #  members: [
+  #    { _id: 0, host: "el01:27017" },
+  #    { _id: 1, host: "el02:27017" },
+  #    { _id: 2, host: "el03:27017" }
+  #  ]
+  #})
+  #rs.status() Проверка статуса 
+  #rs.add("el03:27017"): Добавить хост, если ранее база была инициализирована с другим количеством хостов
+  #
+
+  graylog:
+    image: graylog/graylog:3.3.13
+    container_name: graylog_server_1
+    #command: ["java", "--config", "/etc/graylog/server.conf"]
+    volumes:
+      - /app/graylog:/usr/share/graylog/data/data
+      - /app/config/server.conf:/usr/share/graylog/data/config/graylog.conf
+    #environment:
+    #  GRAYLOG_MONGODB_URI: mongodb://el01:27017,el02:27017,el03:27017/graylog?replicaSet=graylog
+    ports:
+      - "9000:9000"
+      - "12201:12201"
+      - "514:514"
+      - "514:514/udp"
+      - "6000:6000"
+      - "6000:6000/udp"
+    network_mode: host
+    depends_on:
+      - mongo
+    restart: unless-stopped

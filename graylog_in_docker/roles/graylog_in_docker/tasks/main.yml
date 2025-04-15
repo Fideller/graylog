@@ -1,0 +1,58 @@
+---  
+- name: Создание структуры каталогов
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /app/config
+    - /app/graylog
+    - /app/gelastic
+    
+- name: Создание структуры каталогов /app/graylog
+  file:
+    path: /app/graylog
+    state: directory
+    mode: '0777'
+
+- name: Создание структуры каталогов /app/elastic
+  file:
+    path: /app/gelastic
+    state: directory
+    mode: '0777'
+
+- name: Развертывание файла конфига graylog
+  template:
+    src: templates/server.conf.j2
+    dest: /app/config/server.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: inventory_hostname in groups['graylog_node']
+
+
+- name: Формируем JSON для инициализации Replica Set
+  delegate_to: localhost
+  run_once: true
+  template:
+    src: rs_config.js.j2
+    dest: /tmp/rs_config.js
+
+- name: Показываем содержимое сгенерированного файла
+  delegate_to: localhost
+  run_once: true
+  command: cat /tmp/rs_config.js
+  register: rs_file
+
+- name: Выводим его
+  delegate_to: localhost
+  run_once: true
+  debug:
+    var: rs_file.stdout_lines
+
+
+#- name: Инициализируем Replica Set
+#  community.mongodb.mongodb_shell:
+#    login_host: localhost
+#    login_port: 27017
+#    eval: "rs.initiate({{ rs_config | to_json }})"
