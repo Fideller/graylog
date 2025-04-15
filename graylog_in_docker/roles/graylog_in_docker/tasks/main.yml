@@ -1,25 +1,16 @@
 ---  
 - name: Создание структуры каталогов
   file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
-    mode: '0755'
+    mode: "{{ item.mode }}"
   loop:
-    - /app/config
-    - /app/graylog
-    - /app/gelastic
-    
-- name: Создание структуры каталогов /app/graylog
-  file:
-    path: /app/graylog
-    state: directory
-    mode: '0777'
-
-- name: Создание структуры каталогов /app/elastic
-  file:
-    path: /app/gelastic
-    state: directory
-    mode: '0777'
+    - { path: /app/config,       mode: '0755' }
+    - { path: /app/graylog,      mode: '0777' }
+    - { path: /app/elastic,      mode: '0777' }
+    - { path: /app/elastic/log,  mode: '0755' }
+    - { path: /app/mongodb,      mode: '0755' }
+    - { path: /app/mongodb/log,  mode: '0755' }
 
 - name: Развертывание файла конфига graylog
   template:
