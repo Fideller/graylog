@@ -31,8 +31,8 @@ graylog_master_node:
 graylog_node:
   hosts:
     el01:
-    el02:
-    el03:
+    #el02:
+    #el03:
 
 elastic_node:
   hosts:

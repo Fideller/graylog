@@ -5,7 +5,7 @@ mongo --host localhost --port 27017
 
 __________________АКТИВАЦИЯ MONGODB КЛАСТЕРА__________________
 rs.initiate({
-  _id: graylog,
+  _id: "graylog",
   members: [
   {% for item in groups['mongo_node'] | sort %}
     { "_id": {{ loop.index0 }}, "host": "{{ item }}:27017" }{% if not loop.last %},

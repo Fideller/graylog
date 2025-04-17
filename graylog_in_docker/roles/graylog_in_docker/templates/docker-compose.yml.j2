@@ -1,7 +1,8 @@
 services:
+{% if inventory_hostname in groups['elastic_node'] %}
   elasticsearch:
     image: elasticsearch:6.8.19
-    container_name: graylog_elasticsearch_1  
+    container_name: graylog_elasticsearch
     ulimits:
       memlock:
         soft: -1
@@ -17,29 +18,30 @@ services:
       - "9300:9300"
     network_mode: host
     restart: unless-stopped
+{% endif %}
 
+{% if inventory_hostname in groups['mongo_node'] %}
   mongo:
     image: mongo:4.4
     container_name: graylog_mongo
     command: ["mongod", "--bind_ip_all", "--config", "/etc/mongod.conf"]
     volumes:
-      - /app/mongo:/graylog/mongodb
+      - /app/mongodb:/graylog/mongodb
       - /app/config/mongod.conf:/etc/mongod.conf
-      - /app/mongo/log:/var/log/mongodb/
-    network_mode: host
+      - /app/mongodb/log:/var/log/mongodb/
     ports:
       - "27017:27017"
+    network_mode: host
     restart: unless-stopped
-  
+{% endif %}
+
+{% if inventory_hostname in groups['graylog_node'] %}
   graylog:
     image: graylog/graylog:3.3.13
-    container_name: graylog_server_1
-    #command: ["java", "--config", "/etc/graylog/server.conf"]
+    container_name: graylog_server
     volumes:
       - /app/graylog:/usr/share/graylog/data/data
       - /app/config/server.conf:/usr/share/graylog/data/config/graylog.conf
-    #environment:
-    #  GRAYLOG_MONGODB_URI: mongodb://el01:27017,el02:27017,el03:27017/graylog?replicaSet=graylog
     ports:
       - "9000:9000"
       - "12201:12201"
@@ -51,3 +53,4 @@ services:
     depends_on:
       - mongo
     restart: unless-stopped
+{% endif %}

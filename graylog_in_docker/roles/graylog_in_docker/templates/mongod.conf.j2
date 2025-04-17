@@ -14,33 +14,14 @@ storage:
   dbPath: /graylog/mongodb
   journal:
     enabled: true
-#  engine:
   wiredTiger:
     engineConfig:
       configString: cache_size=1Gb
 
-# how the process runs
-#processManagement:
-#  fork: true  # fork and run in background
-#  pidFilePath: /var/run/mongodb/mongod.pid  # location of pidfile
-#  timeZoneInfo: /usr/share/zoneinfo
-
 # network interfaces
 net:
   port: 27017
-  bindIp: localhost,10.10.10.71
-
-#security:
-
-#operationProfiling:
+  bindIp: localhost,{{ hostvars[inventory_hostname]['ansible_host'] }}
 
 replication:
   replSetName: "graylog"
-  
-#sharding:
-
-## Enterprise-Only Options
-
-#auditLog:
-
-#snmp:

@@ -1,4 +1,7 @@
 ---  
+- name: Include vm.max_map_count tasks
+  include_tasks: sysctl.yml
+
 - name: Создание структуры каталогов
   file:
     path: "{{ item.path }}"
@@ -8,17 +11,21 @@
     - { path: /app/config,       mode: '0755' }
     - { path: /app/graylog,      mode: '0777' }
     - { path: /app/elastic,      mode: '0777' }
-    - { path: /app/elastic/log,  mode: '0755' }
-    - { path: /app/mongodb,      mode: '0755' }
-    - { path: /app/mongodb/log,  mode: '0755' }
+    - { path: /app/elastic/log,  mode: '0777' }
+    - { path: /app/mongodb,      mode: '0777' }
+    - { path: /app/mongodb/log,  mode: '0777' }
+
+- name: Остановить все контейнеры
+  shell: |
+    docker ps -q | xargs -r docker stop
+  args:
+    executable: /bin/bash
+  become: true
 
 - name: Развертывание файла конфига graylog
   template:
     src: templates/server.conf.j2
     dest: /app/config/server.conf
-    owner: root
-    group: root
-    mode: '0644'
   when: inventory_hostname in groups['graylog_node']
 
 
@@ -28,6 +35,59 @@
   template:
     src: rs_config.js.j2
     dest: /tmp/rs_config.js
+
+- name: Создаем docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /app/docker-compose.yml
+
+- name: Создаем elasticsearch.yml
+  template:
+    src: elasticsearch.yml.j2
+    dest: /app/config/elasticsearch.yml
+  when: "'elastic_node' in group_names"
+
+- name: Создаем jvm.options
+  template:
+    src: jvm.options.j2
+    dest: /app/config/jvm.options
+  when: "'elastic_node' in group_names"
+
+- name: Создаем mongod.conf
+  template:
+    src: mongod.conf.j2
+    dest: /app/config/mongod.conf
+  when: "'mongo_node' in group_names"
+
+- name: Create systemd unit file for docker-compose
+  copy:
+    dest: "/etc/systemd/system/graylogd.service"
+    content: |
+      [Unit]
+      Description=Docker Compose App graylogd
+      Requires=docker.service
+      After=docker.service
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=true
+      WorkingDirectory=/app
+      ExecStart=/usr/bin/docker-compose up -d
+      ExecStop=/usr/bin/docker-compose down
+      TimeoutStartSec=0
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd
+  command: systemctl daemon-reload
+
+- name: Enable and start the docker-compose systemd service
+  systemd:
+    name: "graylogd.service"
+    enabled: true
+    state: restarted
+
 
 #- name: Показываем содержимое сгенерированного файла
 #  delegate_to: localhost
