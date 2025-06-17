@@ -21,6 +21,11 @@ all:
      graylog_http_bind_address: "{{ ansible_host }}:9000"
      graylog_http_external_uri: "http://{{ ansible_host }}:9000/" # Заменить на реальный URL 
 
+graylog_node:
+  hosts:
+    el01:
+    el02:
+    el03:
 
 graylog_master_node:
   hosts:
@@ -28,17 +33,19 @@ graylog_master_node:
   vars: 
     graylog_is_master: true
 
-graylog_node:
-  hosts:
-    el01:
-    #el02:
-    #el03:
-
 elastic_node:
   hosts:
     el01:
     el02:
     el03:
+
+elastic_master_node:
+  hosts:
+    el01:
+    el02:
+    el03:
+  vars:
+    elastic_is_master: true
 
 mongo_node:
   hosts:

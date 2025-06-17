@@ -28,7 +28,6 @@
     dest: /app/config/server.conf
   when: inventory_hostname in groups['graylog_node']
 
-
 - name: Формируем JSON для инициализации Replica Set /tmp/rs_config.js
   delegate_to: localhost
   run_once: true
@@ -59,7 +58,7 @@
     dest: /app/config/mongod.conf
   when: "'mongo_node' in group_names"
 
-- name: Create systemd unit file for docker-compose
+- name: Создание сервиса для docker-compose
   copy:
     dest: "/etc/systemd/system/graylogd.service"
     content: |
@@ -79,7 +78,7 @@
       [Install]
       WantedBy=multi-user.target
 
-- name: Reload systemd
+- name: Релоад демон службы
   command: systemctl daemon-reload
 
 - name: Enable and start the docker-compose systemd service
@@ -87,23 +86,3 @@
     name: "graylogd.service"
     enabled: true
     state: restarted
-
-
-#- name: Показываем содержимое сгенерированного файла
-#  delegate_to: localhost
-#  run_once: true
-#  command: cat /tmp/rs_config.js
-#  register: rs_file
-#
-#- name: Выводим его
-#  delegate_to: localhost
-#  run_once: true
-#  debug:
-#    var: rs_file.stdout_lines
-
-
-#- name: Инициализируем Replica Set
-#  community.mongodb.mongodb_shell:
-#    login_host: localhost
-#    login_port: 27017
-#    eval: "rs.initiate({{ rs_config | to_json }})"

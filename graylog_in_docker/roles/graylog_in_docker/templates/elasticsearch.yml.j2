@@ -7,7 +7,7 @@ discovery.zen.ping.unicast.hosts:
 network.host: 0.0.0.0
 node.data: true
 node.ingest: true
-node.master: {% if inventory_hostname == groups['elastic_node'][0] %}true{% else %}false{% endif %}
+node.master: {{ elastic_is_master | default(false) }}
 
 node.name: {{ inventory_hostname }}
 
